@@ -1,0 +1,89 @@
+{
+  "name": "Panadería La Espiga - atención al cliente",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Panadería La Espiga",
+        "formDescription": "Escríbenos tu pedido, duda o queja y te respondemos al momento.",
+        "formFields": {
+          "values": [
+            { "fieldLabel": "Nombre", "requiredField": true },
+            { "fieldLabel": "Correo", "fieldType": "email", "requiredField": true },
+            { "fieldLabel": "Mensaje", "fieldType": "textarea", "requiredField": true }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": { "path": "contacto" }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [0, 0],
+      "id": "a1a1a1a1-0000-4000-8000-000000000001",
+      "name": "Formulario de contacto",
+      "webhookId": "contacto"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres el asistente de atención al cliente de la Panadería La Espiga.\n\nDatos del negocio:\n- Horario: de martes a domingo de 7:00 a 14:30. Lunes cerrado.\n- Pan de centeno: 3,40 €. Empanada de zamburiñas: 18 €. Barra normal: 1,10 €.\n- Los encargos se recogen a partir de las 11:00 y hay que hacerlos con un día de antelación.\n- Teléfono de pedidos: 600 123 987.\n\nHa escrito {{ $json.Nombre }} con este mensaje:\n\"{{ $json.Mensaje }}\"\n\nDevuelve SOLO un objeto JSON con dos claves:\n- \"categoria\": una de \"pedido\", \"consulta\" o \"queja\".\n- \"respuesta\": una respuesta breve y amable en español para el cliente, usando solo los datos del negocio. Si no sabes algo, dile que llame al teléfono de pedidos."
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [220, 0],
+      "id": "a1a1a1a1-0000-4000-8000-000000000002",
+      "name": "Redactar respuesta"
+    },
+    {
+      "parameters": {
+        "model": "gemma4:latest",
+        "options": { "format": "json", "temperature": 0.2 }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [220, 200],
+      "id": "a1a1a1a1-0000-4000-8000-000000000003",
+      "name": "Modelo local (Ollama)",
+      "credentials": { "ollamaApi": { "id": "ollamalocal00001", "name": "Ollama local" } }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "b1", "name": "nombre", "value": "={{ $('Formulario de contacto').item.json.Nombre }}", "type": "string" },
+            { "id": "b2", "name": "correo", "value": "={{ $('Formulario de contacto').item.json.Correo }}", "type": "string" },
+            { "id": "b3", "name": "categoria", "value": "={{ JSON.parse($json.text).categoria }}", "type": "string" },
+            { "id": "b4", "name": "respuesta", "value": "={{ JSON.parse($json.text).respuesta }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [560, 0],
+      "id": "a1a1a1a1-0000-4000-8000-000000000004",
+      "name": "Ordenar datos"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "=Gracias, {{ $json.nombre }}",
+        "completionMessage": "={{ $json.respuesta }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [780, 0],
+      "id": "a1a1a1a1-0000-4000-8000-000000000005",
+      "name": "Mostrar respuesta",
+      "webhookId": "contacto-fin"
+    }
+  ],
+  "connections": {
+    "Formulario de contacto": { "main": [[{ "node": "Redactar respuesta", "type": "main", "index": 0 }]] },
+    "Modelo local (Ollama)": { "ai_languageModel": [[{ "node": "Redactar respuesta", "type": "ai_languageModel", "index": 0 }]] },
+    "Redactar respuesta": { "main": [[{ "node": "Ordenar datos", "type": "main", "index": 0 }]] },
+    "Ordenar datos": { "main": [[{ "node": "Mostrar respuesta", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}

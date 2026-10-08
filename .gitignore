@@ -1,0 +1,25 @@
+# Claves de los alumnos y del profesor
+keys.txt
+*.keys
+*.pub
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+id_ecdsa*
+/runpod
+
+# Credenciales (RUNPOD_API_KEY, tokens de Telegram...)
+.env
+.env.*
+*.token
+
+# Salida de runner.sh: IPs y puertos de los pods
+*.log
+ssh-*.txt
+
+# Notas y ficheros locales
+cuak
+.claude/
+.vscode/
+.DS_Store
